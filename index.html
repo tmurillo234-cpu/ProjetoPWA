@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
+<title>DevJobs — Vagas para Programadores</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+  body { background: #0f172a; color: #e2e8f0; }
+
+  header {
+    background: #1e293b; padding: 20px 40px;
+    display: flex; justify-content: space-between; align-items: center;
+    position: sticky; top: 0; box-shadow: 0 2px 10px rgba(0,0,0,.4);
+  }
+  .logo { font-size: 1.5rem; font-weight: bold; color: #38bdf8; }
+  .btn-publicar {
+    background: #38bdf8; color: #0f172a; border: none;
+    padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;
+  }
+  .btn-publicar:hover { background: #0ea5e9; }
+
+  .banner { text-align: center; padding: 60px 20px; }
+  .banner h1 { font-size: 2.2rem; margin-bottom: 10px; }
+  .banner p { color: #94a3b8; margin-bottom: 25px; }
+
+  .filtros { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .filtros input, .filtros select {
+    padding: 10px 15px; border-radius: 8px; border: 1px solid #334155;
+    background: #1e293b; color: #e2e8f0; outline: none;
+  }
+  .filtros input { width: 280px; }
+
+  #lista-vagas { max-width: 800px; margin: 30px auto; padding: 0 20px; }
+
+  .card {
+    background: #1e293b; border-radius: 12px; padding: 20px;
+    margin-bottom: 15px; border-left: 4px solid #38bdf8;
+    display: flex; justify-content: space-between; align-items: center; gap: 15px;
+  }
+  .card h3 { color: #38bdf8; margin-bottom: 5px; }
+  .card .info { color: #94a3b8; font-size: .9rem; margin-bottom: 8px; }
+  .tags span {
+    background: #334155; padding: 4px 10px; border-radius: 20px;
+    font-size: .8rem; margin-right: 6px;
+  }
+  .salario { font-size: 1.2rem; font-weight: bold; color: #4ade80; white-space: nowrap; }
+  .btn-candidatar {
+    background: #4ade80; color: #0f172a; border: none; padding: 8px 16px;
+    border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 8px;
+  }
+  .btn-candidatar:hover { background: #22c55e; }
+
+  #modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.7); justify-content: center; align-items: center;
+  }
+  #modal.aberto { display: flex; }
+  .modal-box {
+    background: #1e293b; padding: 30px; border-radius: 12px; width: 90%; max-width: 420px;
+  }
+  .modal-box h2 { margin-bottom: 15px; color: #38bdf8; }
+  .modal-box input {
+    width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px;
+    border: 1px solid #334155; background: #0f172a; color: #e2e8f0;
+  }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+  .modal-actions button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+  .btn-salvar { background: #38bdf8; color: #0f172a; }
+  .btn-cancelar { background: #475569; color: #e2e8f0; }
+
+  .vazio { text-align: center; color: #64748b; padding: 40px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">&lt;/&gt; DevJobs</div>
+  <button class="btn-publicar" onclick="abrirModal()">+ Publicar Vaga</button>
+</header>
+
+<section class="banner">
+  <h1>Encontre sua vaga como Programador</h1>
+  <p>As melhores oportunidades em tecnologia, em um só lugar.</p>
+  <div class="filtros">
+    <input type="text" id="busca" placeholder="Buscar por título ou tecnologia..." oninput="renderizar()">
+    <select id="filtroTipo" onchange="renderizar()">
+      <option value="">Todos os tipos</option>
+      <option>CLT</option>
+      <option>PJ</option>
+      <option>Freelance</option>
+    </select>
+    <select id="filtroLocal" onchange="renderizar()">
+      <option value="">Todos os locais</option>
+      <option>Remoto</option>
+      <option>Híbrido</option>
+      <option>Presencial</option>
+    </select>
+  </div>
+</section>
+
+<main id="lista-vagas"></main>
+
+<div id="modal">
+  <div class="modal-box">
+    <h2>Publicar Nova Vaga</h2>
+    <input type="text" id="titulo" placeholder="Título da vaga (ex: Desenvolvedor Front-End)">
+    <input type="text" id="empresa" placeholder="Empresa">
+    <input type="text" id="tecnologias" placeholder="Tecnologias (ex: JavaScript, React, Node)">
+    <input type="text" id="salario" placeholder="Salário (ex: R$ 8.000)">
+    <select id="tipo" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;background:#0f172a;color:#e2e8f0;border:1px solid #334155;">
+      <option>CLT</option><option>PJ</option><option>Freelance</option>
+    </select>
+    <select id="local" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;background:#0f172a;color:#e2e8f0;border:1px solid #334155;">
+      <option>Remoto</option><option>Híbrido</option><option>Presencial</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-salvar" onclick="adicionarVaga()">Publicar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Dados iniciais das vagas
+let vagas = [
+  { titulo: "Desenvolvedor Front-End Pleno", empresa: "TechSolutions", tecnologias: ["JavaScript", "React", "CSS"], salario: "R$ 7.500", tipo: "CLT", local: "Remoto" },
+  { titulo: "Desenvolvedor Back-End Sênior", empresa: "CloudSoft", tecnologias: ["Node.js", "PostgreSQL", "Docker"], salario: "R$ 14.000", tipo: "PJ", local: "Híbrido" },
+  { titulo: "Desenvolvedor Full Stack Júnior", empresa: "StartUpBR", tecnologias: ["JavaScript", "Vue", "MongoDB"], salario: "R$ 4.000", tipo: "CLT", local: "Presencial" },
+  { titulo: "Programador Python Freelance", empresa: "DataCorp", tecnologias: ["Python", "Pandas"], salario: "R$ 6.000", tipo: "Freelance", local: "Remoto" }
+];
+
+// Carrega vagas salvas no navegador (se houver)
+if (localStorage.getItem("vagas")) {
+  vagas = JSON.parse(localStorage.getItem("vagas"));
+}
+
+function salvar() {
+  localStorage.setItem("vagas", JSON.stringify(vagas));
+}
+
+function renderizar() {
+  const busca = document.getElementById("busca").value.toLowerCase();
+  const tipo = document.getElementById("filtroTipo").value;
+  const local = document.getElementById("filtroLocal").value;
+
+  const filtradas = vagas.filter(v =>
+    (v.titulo.toLowerCase().includes(busca) ||
+     v.tecnologias.join(" ").toLowerCase().includes(busca)) &&
+    (tipo === "" || v.tipo === tipo) &&
+    (local === "" || v.local === local)
+  );
+
+  const lista = document.getElementById("lista-vagas");
+
+  if (filtradas.length === 0) {
+    lista.innerHTML = `<p class="vazio">Nenhuma vaga encontrada </p>`;
+    return;
+  }
+
+  lista.innerHTML = filtradas.map((v, i) => `
+    <div class="card">
+      <div>
+        <h3>${v.titulo}</h3>
+        <p class="info">${v.empresa} • ${v.tipo} • ${v.local}</p>
+        <div class="tags">${v.tecnologias.map(t => `<span>${t}</span>`).join("")}</div>
+        <button class="btn-candidatar" onclick="candidatar(${i})">Candidatar-se</button>
+      </div>
+      <div class="salario">${v.salario}</div>
+	  
+    </div>
+	
+  `).join("");
+}
+
+function candidatar(i) {
+  alert(`Candidatura enviada para: ${vagas[i].titulo} `);
+}
+
+function abrirModal() {
+  document.getElementById("modal").classList.add("aberto");
+}
+
+function fecharModal() {
+  document.getElementById("modal").classList.remove("aberto");
+}
+
+function adicionarVaga() {
+  const nova = {
+    titulo: document.getElementById("titulo").value,
+    empresa: document.getElementById("empresa").value,
+    tecnologias: document.getElementById("tecnologias").value.split(",").map(t => t.trim()),
+    salario: document.getElementById("salario").value,
+    tipo: document.getElementById("tipo").value,
+    local: document.getElementById("local").value
+  };
+
+  if (!nova.titulo || !nova.empresa || !nova.salario) {
+    alert("Preencha título, empresa e salário!");
+    return;
+  }
+
+  vagas.unshift(nova); // adiciona no topo
+  salvar();
+  renderizar();
+  fecharModal();
+
+  // limpa o formulário
+  ["titulo", "empresa", "tecnologias", "salario"].forEach(id =>
+    document.getElementById(id).value = "");
+}
+
+// Fecha o modal clicando fora dele
+document.getElementById("modal").addEventListener("click", e => {
+  if (e.target.id === "modal") fecharModal();
+});
+
+renderizar();
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js")
+      .then(() => console.log("Service Worker registrado!"))
+      .catch(err => console.log("Erro:", err));
+  });
+}
+
+</script>
+
+</body>
+</html>
